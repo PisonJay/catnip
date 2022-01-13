@@ -34,6 +34,7 @@ pub async fn acknowledger<RT: Runtime>(cb: Rc<ControlBlock<RT>>) -> Result<!, Fa
             _ = ack_future => {
                 let (recv_seq_no, _) = cb.get_last_recv_seq_no();
                 let (ack_seq_no, _) = cb.get_last_ack_no();
+                let (sent_seq_no, _) = cb.get_sent_seq_no();
                 assert_ne!(ack_seq_no, recv_seq_no);
 
                 let remote_link_addr = cb.arp().query(cb.get_remote().address()).await?;
@@ -41,6 +42,7 @@ pub async fn acknowledger<RT: Runtime>(cb: Rc<ControlBlock<RT>>) -> Result<!, Fa
                 let mut header = cb.tcp_header();
                 header.ack = true;
                 header.ack_num = recv_seq_no;
+                header.seq_num = sent_seq_no;
                 cb.emit(header, RT::Buf::empty(), remote_link_addr);
             },
         }
